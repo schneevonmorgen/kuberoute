@@ -1,0 +1,8 @@
+*~
+*.pyc
+/.cache
+MANIFEST
+credentials.txt
+src/kuberoute.egg-info
+build
+dist

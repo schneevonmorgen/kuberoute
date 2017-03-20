@@ -1,0 +1,317 @@
+#!/usr/bin/env python3
+
+import argparse
+import configparser
+import json
+import logging
+import sys
+from collections import namedtuple
+
+import kuberoute.authentification as auth
+import kuberoute.io
+import kuberoute.tornado
+import requests
+import tornado.ioloop
+import tornado.web
+from effect import ComposedDispatcher, Effect, base_dispatcher, sync_perform
+from effect.do import do
+from effect.io import stdio_dispatcher
+from kuberoute.dns import FakeDNSClient, Route53Client, SkyDNSClient
+from kuberoute.intent import PYKUBE_DISPATCHER, WebserverWrite
+from kuberoute.reporting import report_from_nodes
+from kuberoute.service import get_name_record_updates, record_quota_fullfilled
+from kuberoute.store import MutableStore, S3BucketKey
+
+Stores = namedtuple('Stores', ['records', 'nodes'])
+
+logger = logging.getLogger(__name__)
+
+CONFIG_DEFAULT = '/etc/kuberoute/config'
+COMMON_DISPATCHER = ComposedDispatcher([
+    stdio_dispatcher,
+    PYKUBE_DISPATCHER,
+    base_dispatcher,
+    kuberoute.store.DISPATCHER,
+    auth.AUTH_DISPATCHER,
+])
+
+def make_handler(
+        dns_client_generator, kubeconfig_generator, namespaces,
+        domain_label, name_label, failover_label, quota_label,
+        stores, s3_report):
+    class Handler(kuberoute.tornado.RequestHandler):
+        def get(self):
+            effects = handler(
+                self,
+                dns_client_generator,
+                kubeconfig_generator,
+                namespaces,
+                domain_label,
+                name_label,
+                failover_label,
+                quota_label,
+                stores,
+                s3_report
+            )
+            sync_perform(COMMON_DISPATCHER, effects)
+
+    return Handler
+
+
+class HealthHandler(kuberoute.tornado.RequestHandler):
+    def get(self):
+        effects = health_handler(self)
+        sync_perform(COMMON_DISPATCHER, effects)
+
+
+def get_dns_client_generator(klass_name, *args, **kwargs):
+    """Return a function that takes a domain name and returns a
+    NameService object"""
+
+    if klass_name == 'route53':
+        def dns_client(domain):
+            return kuberoute.io.get_dns_client(
+                Route53Client, domain, *args, **kwargs)
+    elif klass_name == 'skydns':
+        def dns_client(domain):
+            return kuberoute.io.get_dns_client(
+                SkyDNSClient, domain, *args, **kwargs
+            )
+    elif klass_name == 'fakedns':
+        def dns_client(domain):
+            return kuberoute.io.get_dns_client(
+                FakeDNSClient)
+    else:
+        raise Exception('DNS backend {klass_name} not implemented'.format(
+            klass_name=klass_name
+        ))
+    return dns_client
+
+
+def get_kubeconfig_generator(config_kind, *args, **kwargs):
+    """Return a function that generate a valid kubeconfig"""
+    if config_kind == 'serviceaccount':
+        def service_account():
+            return auth.from_service_account()
+        return service_account
+    elif config_kind == 'kubernetes_url':
+        def get_config_from_url():
+            for key in kwargs.keys():
+                if key == 'verify':
+                    if kwargs[key] in ['yes', 'on', 'true']:
+                        kwargs[key] = True
+                    elif kwargs[key] in ['no', 'off', 'false']:
+                        kwargs[key] = False
+                        print('WARNING: TLS verify disabled', file=sys.stderr)
+                    else:
+                        raise Exception('Invalid config error for field kubernetes_url.verify')
+            return auth.from_url(*args, **kwargs)
+        return get_config_from_url
+    elif config_kind == 'kubeconfig':
+        def get_config_from_kubeconfig():
+            return auth.from_kubeconfig(*args, **kwargs)
+        return get_config_from_kubeconfig
+    else:
+        raise Exception('kubeconfig of kind {config_kind} not implemented'.format(
+            config_kind=config_kind
+        ))
+
+
+@do
+def handler(
+        server,
+        dns_client_generator,
+        kubeconfig_generator,
+        namespaces,
+        domain_label,
+        name_label,
+        failover_label,
+        quota_label,
+        stores,
+        s3_report
+):
+    try:
+        api = yield kubeconfig_generator()
+
+        services = []
+        for namespace in namespaces:
+            services += yield kuberoute.io.get_services(api, namespace)
+
+        pods = []
+        for namespace in namespaces:
+            pods += yield kuberoute.io.get_pods(api, namespace)
+
+        raw_nodes = yield kuberoute.io.get_nodes(api)
+        nodes = list(map(lambda x: x.obj, raw_nodes))
+        stores.nodes.put(nodes)
+
+        records_by_domain = get_name_record_updates(
+            services, pods, domain_label, name_label, failover_label, quota_label)
+        record_set = []
+        for (domain, records) in records_by_domain.items():
+            record_set += records
+        yield stores.records.put(record_set)
+        yield report_state_to_s3(record_set, nodes, True, s3_report)
+        for domain, records in records_by_domain.items():
+            dns_client = yield dns_client_generator(domain)
+            for record in records:
+                if record.failover is None:
+                    failover_addresses = None
+                else:
+                    failover_addresses = [record.failover]
+                failover = kuberoute.io.update_name_record(
+                    dns_client,
+                    record.name,
+                    failover_addresses,
+                    60,
+                    record.record_type
+                )
+                success = kuberoute.io.update_name_record(
+                    dns_client,
+                    record.name,
+                    [address for address in set(record.addresses)],
+                    60,
+                    record.record_type
+                )
+                if not record_quota_fullfilled(record, nodes):
+                    record_set = yield failover
+                elif len(record.addresses) == 0:
+                    record_set = yield failover
+                else:
+                    record_set = yield success
+            yield timestamp_update(dns_client)
+        yield server.write_msg('Updated record sets.')
+    except requests.exceptions.ConnectionError:
+        records = yield stores.records.get()
+        nodes = yield stores.nodes.get()
+        yield report_state_to_s3(records, nodes, False, s3_report)
+
+@do
+def report_state_to_s3(records, nodes, cluster_available, s3_report):
+    if s3_report is None:
+        logger.warning(
+            'kuberoute status gets not reported, state endpoint not configured'
+        )
+        return None
+    record_info = dict([
+        (record.name + '.' + record.domain,
+         {
+             'endpoints': record.addresses,
+             'quota': record.quota,
+             'healthy': record_quota_fullfilled(record, nodes),
+         }
+        )
+        for record in records
+    ])
+    cluster_info = {
+        'nodes': report_from_nodes(nodes),
+        'available': cluster_available,
+        'services': record_info,
+    }
+    yield s3_report.write(json.dumps(cluster_info))
+
+
+@do
+def timestamp_update(dns_client):
+    current_time = yield kuberoute.io.get_time()
+    name = 'updatecheck.kuberoute'
+    cname = "{year}-{month}-{day}-{hour}-{minute}.schneevonmorgen.com".format(
+        year=current_time.year,
+        month=current_time.month,
+        day=current_time.day,
+        hour=current_time.hour,
+        minute=current_time.minute
+    )
+    record_set = yield kuberoute.io.update_name_record(
+        dns_client,
+        name,
+        [cname],
+        60,
+        'CNAME'
+    )
+
+
+@do
+def health_handler(server):
+    yield server.write_msg("I am healthy")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Start kuberoute')
+    parser.add_argument('--config',
+                        dest='config',
+                        type=str,
+                        help='config file to consume, defaults to {default}'.format(
+                            default=CONFIG_DEFAULT
+                        )
+    )
+    parser.add_argument('--port',
+                        dest='port',
+                        type=str,
+                        help='port to listen on, this command line flag overrides eventual port configurations from the config file',
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    config = configparser.ConfigParser()
+    read_configs = config.read(args.config)
+    if len(read_configs) == 0:
+        print("Config file {config} not found, exiting".format(
+            config = args.config
+        ))
+        exit(1)
+    kuberoute_config = config['kuberoute']
+    dns_client_generator = get_dns_client_generator(
+        klass_name=config['kuberoute']['dns_backend'],
+        **(config[config['kuberoute']['dns_backend']])
+    )
+    kubeconfig_kind = config['kuberoute']['kubeconfig_kind']
+    try:
+        s3_report_config = config['s3report']
+        s3_report = S3BucketKey(
+            key=s3_report_config['key'],
+            bucket_name=s3_report_config['bucket_name'],
+            aws_access_key_id=s3_report_config['aws_access_key_id'],
+            aws_secret_access_key=s3_report_config['aws_secret_access_key'],
+        )
+    except (configparser.NoSectionError, KeyError):
+        s3_report = None
+    try:
+        kubeconfig_kwargs = config[kubeconfig_kind]
+    except (configparser.NoSectionError, KeyError):
+        kubeconfig_kwargs = {}
+    kubeconfig_generator = get_kubeconfig_generator(
+        config_kind=kubeconfig_kind,
+        **kubeconfig_kwargs
+    )
+
+    stores = Stores(records=MutableStore(), nodes=MutableStore())
+
+    try:
+        app = tornado.web.Application([
+            (r'/health', HealthHandler),
+            (r'/', make_handler(
+                dns_client_generator=dns_client_generator,
+                kubeconfig_generator=kubeconfig_generator,
+                namespaces=list(map(lambda str: str.strip(), kuberoute_config['namespaces'].split(","))),
+                domain_label=kuberoute_config['domain_label'],
+                name_label=kuberoute_config['name_label'],
+                failover_label=kuberoute_config['failover_label'],
+                quota_label=kuberoute_config['quota_label'],
+                stores=stores,
+                s3_report=s3_report,
+            ))
+        ])
+    except KeyError as e:
+        print("Invalid config file", file=sys.stderr)
+        raise e
+    port = int(args.port or kuberoute_config['port'])
+    print('Running on port {port}.'.format(port=port))
+    app.listen(port)
+    tornado.ioloop.IOLoop.current().start()
+
+
+if __name__ == '__main__':
+    main()

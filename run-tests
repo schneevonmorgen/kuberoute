@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+
+pythonpath = os.environ['PYTHONPATH']
+cwd = os.getcwd()
+
+
+subprocess.run(
+    ['nosetests', 'tests'],
+    env={ **os.environ, **{ 'PYTHONPATH': cwd + "/src:" + pythonpath } }
+)

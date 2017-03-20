@@ -1,0 +1,239 @@
+.. -*- mode: rst -*-
+kuberoute /kjuːb ɹuːt/
+======================
+
+Kuberoute is a program that lets you conntect kubernetes services with
+domain names.
+
+how it works
+------------
+
+kuberoute queries kubernetes for services and pods in fixed intervals.
+You can configure which services are queried in the mandatory config
+file for kuberoute.
+
+If it finds a service with the kuberoute_domain and the kuberoute_name
+labels, it will lookup which pods are served by the service.
+kuberoute will try to find the addresses of the nodes the pods are
+running on and notify the configure dns service about these pods.
+
+Currently ``route53`` and ``skydns`` are implemented as a valid DNS
+service.
+
+Although you can specify more than one namespace in the kuberoute
+config file, kuberoute will only search the namespace of the service
+when looking for appropriate pods.
+
+configuration
+=============
+
+command line arguments
+----------------------
+
+kuberoute takes 2 command line arguments:
+
+--port NUMBER
+  Specifies on which port to listen on, optional when specified in
+  configuration file
+
+--config PATH
+  Path to a valid config file.
+
+configuration file
+------------------
+
+The confguration file follows the INI format.  A valid config file has
+to contain at least a section called ``kuberoute`` and a section that
+describes a DNS backend.
+
+Here is an example::
+
+  [kuberoute]
+  kubeconfig_kind = serviceaccount
+  port = 8081
+  dns_backend = skydns
+  domain_label = kuberoute_domain
+  name_label = kuberoute_name
+  failover_label = kuberoute_failover
+  quota_label = kuberoute_quota
+  namespace = default
+
+  [skydns]
+  # host of the etcd instance that skydns uses,
+  # this is NOT THE SKYDNS HOST
+  host = etcd.server.url
+  port = 2379
+  protocol = http
+
+  [route53]
+  # this section will be ignored.  you could use this
+  # backend by activating it in the [kuberoute] section
+  aws_access_key_id = 123456ABCDEF
+  aws_secret_access_key = abcdefghijk12334677246
+
+Started with the above configuration, kuberoute will query kubernetes
+for all services with the labels 'kuberoute_domain' and
+'kuberoute_name', lookup the values for those labels and propagate the
+public ip addresses of the hosts, running pods for the service, to the
+DNS backend, which is skydns in this case.
+
+If you had a service with the following definition::
+
+  apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.beta.kubernetes.io/external-traffic: OnlyLocal
+    name: kuberoute-testservice
+    labels:
+      kuberoute_domain: schneevonmorgen.com
+      kuberoute_name: quatsch
+      kuberoute_failover: failover.schneevonmorgen.com
+      kuberoute_quota: 80
+  spec:
+    type: NodePort
+    ports:
+      - port: 80
+        protocol: TCP
+    selector:
+      app: testapp
+
+kuberoute would do the following:
+
+1. Query all the pods that match the selector ``{ 'app': 'testapp'}``
+   and get the ip address of the node they are running on.
+
+2. Get the domain name by reading the value of the
+   ``kuberoute_domain`` label, namely ``schneevonmorgen.com``.
+
+3. Get the name of the service by reading the value of the
+   ``kuberoute_name`` label, namely ``quatch``.
+
+4. Publish all the target ip adresses found in step 1 to SkyDNS under
+   the name ``quatsch.schneevonmorgen.com``.
+
+5. If no pods are found with the above selector or less then 80
+   percent of nodes (as defined with the ``kuberoute_quota`` label)
+   provide the service, kuberoute propagates
+   ``failover.schneevonmorgen.com`` to the DNS server.
+
+authentification
+----------------
+
+kuberoute lets you choose the authentification implementation in the
+config file.  There are currently 3 authentification systems
+implemented.
+
+serviceaccount
+  You can use this authentification method if you are running on a
+  cluster that provides service accounts.  No further configuration is
+  required.::
+
+    [kuberoute]
+    kubeconfig_kind = serviceaccount
+
+kubeconfig
+  This authentification method implies that there is a valid kube
+  config file on the system.  Specify the path to this file in a
+  seperate subsection.  Here is an example::
+
+    [kuberoute]
+    kubeconfig_kind = kubeconfig
+    ...
+
+    [kubeconfig]
+    filename = /root/.kube/config
+
+kubernetes_url
+  This authentification method can only used with kubernetes clusters
+  that don't have authentification enabled.  Specify a url where the
+  cluster is located.  Additionally you can specify if you want to
+  verify TLS certificates (default: true) and a CA certificate
+  (default: None) if necessary.::
+
+    [kuberoute]
+    kubeconfig_kind = kubernetes_url
+    ...
+
+    [kubernetes_url]
+    url = https://127.0.0.1:8080
+    verify = true
+    certificate_authority = /var/lib/ssl/ca.crt
+
+state report
+------------
+
+You can let kuberoute report its state to an AWS S3 bucket.  To enable
+state reporting, write something like this into your config file ::
+
+  [s3report]
+  # The access key for aws
+  aws_access_key_id = abcd
+  # The secret access key for aws
+  aws_secret_access_key = abcdefg
+  # The region your bucket lives in
+  region_name = eu-central-1
+  # the name of the bucket
+  bucket_name = statusreport-bucket
+  # The "filename" in the bucket that you want to report to
+  key = file/in/bucket
+
+The output format of the file is json.
+
+building
+========
+
+nix
+---
+
+There is a file ``nix/default.nix`` that builds kuberoute
+installation.  It might be that not all the required packages are
+currently in nixpkgs.  In that case you could import
+``nix/requirements.nix`` to get access to the pypi packages used for
+development.
+
+pip
+---
+
+This package uses pythons ``setuptools``.  Simply install all the
+requirements via pip or easy_install and then run ``python3 setup.py
+install``.
+
+docker image
+------------
+
+If you are on GNU/Linux you can build a docker image that runs
+kuberoute simply by executing ``make docker_image`` in the root
+directory of this repo.
+
+hacking
+=======
+
+nix build system
+----------------
+
+We use the nix build system to test and package kuberoute.  If you are
+on a GNU/Linux operating system and have ``nix`` installed you can
+simply call the ``nix-shell`` program in the root directory of this
+repo and get a shell environment where all dependencies are installed
+and configured.
+
+pip
+---
+
+kuberoute is implemented in python3, meaning that you can install all
+the development dependencies via ``pip``.  There is a
+``requirements.txt`` file in the root directory of this repository and
+also a ``nix/requirements_frozen.txt`` which contains the actual
+versions used by the default build system.  So if you want a build
+environment similar to the one the build system uses, you should
+probably create a ``virtualenv`` and ``pip install -r
+nix/requirements_frozen.txt`` in that environment.  You'll probably
+need ``libxml2`` and ``libxslt`` installed on your system.
+
+testing
+-------
+
+We use ``nosetests`` as a test runner.  All tests are located in the
+``tests`` directory.  To run the tests the src files should be your
+``PYTHONPATH``. ``./run-tests`` does that for you.
