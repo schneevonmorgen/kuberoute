@@ -11,7 +11,7 @@ sdist:
 	nix-shell --command 'python3 setup.py sdist'
 
 docker_image:
-	nix-build nix/docker.nix
+	bash build_docker_image.sh
 
 replace:
 	gdo kubernetes/secret.yml
