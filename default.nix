@@ -6,7 +6,7 @@ in
 let
   callPackage = nixpkgs.callPackage;
 in
-(callPackage nix/default.nix { gdo = pkgs.haskellPackages.gdo; }).overrideDerivation( old:
+(callPackage nix/default.nix {}).overrideDerivation( old:
   let
     oldShellHook = if builtins.hasAttr "shellHook" old then old.shellHook else "";
     oldBuildInputs = if builtins.hasAttr "buildInputs" old then old.buildInputs else [];

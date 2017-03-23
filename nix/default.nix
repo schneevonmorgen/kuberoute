@@ -1,6 +1,6 @@
 { buildPythonPackage,
-  pykube, effect, tornado, nose, route53, jinja2, python-etcd, boto3,
-  gdo }:
+  pykube, effect, tornado, nose, route53, jinja2, python-etcd, boto3, python3
+}:
 let
   version = "0.1";
 in
@@ -8,7 +8,9 @@ buildPythonPackage {
   name = "kuberoute-${version}";
   propagatedBuildInputs =
     [ pykube effect tornado nose route53 jinja2 python-etcd boto3 ];
-  buildInputs = [ gdo ];
+  buildInputs = [ python3 ];
   src = ./..;
-  doCheck = false;
+  checkPhase = ''
+    python $src/run-tests
+  '';
 }
