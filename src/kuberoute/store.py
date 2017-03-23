@@ -59,7 +59,7 @@ class PutStore(object):
 @effect.sync_performer
 def put_store_performer(dispatcher, intent):
     intent.store._put(intent.value)
-        
+
 
 class GetStore(object):
     def __init__(self, store):
@@ -80,8 +80,8 @@ class WriteS3Key(object):
 @effect.sync_performer
 def write_s3_key_performer(dispatcher, intent):
     intent.connection._write(intent.content)
-        
-    
+
+
 DISPATCHER = effect.TypeDispatcher({
     GetStore: get_store_performer,
     PutStore: put_store_performer,

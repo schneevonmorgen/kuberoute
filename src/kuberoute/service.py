@@ -94,11 +94,11 @@ def get_name_record_updates(
         name = safeget(service.obj, 'metadata', 'labels', name_label)
         if domain is None or name is None:
             continue
-        pods = filter(
+        filtered_pods = filter(
             lambda obj: is_pod_running(obj) and is_pod_ready(obj),
             get_pods_for_service(service, pods)
         )
-        ip_addresses = list(map(get_host_ip, pods))
+        ip_addresses = list(map(get_host_ip, filtered_pods))
         failover = safeget(service.obj, 'metadata', 'labels', failover_label)
         try:
             quota = int(safeget(service.obj, 'metadata', 'labels', quota_label))
