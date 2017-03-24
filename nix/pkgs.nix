@@ -84,6 +84,5 @@ let
       }
     );
     buildPythonPackage = self.pkgs.python3Packages.buildPythonPackage;
-    kuberoute = self.callPackage ./default.nix {};
   };
 in fix' (extends additions base)

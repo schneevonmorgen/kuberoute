@@ -6,4 +6,3 @@ jinja2
 nose
 python-etcd
 boto3
-flake8

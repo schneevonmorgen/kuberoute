@@ -147,8 +147,8 @@ let
 
 
     "botocore" = python.mkDerivation {
-      name = "botocore-1.5.26";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/9a/50/58e94d9815879f4509b6176bd3957a0428033c260fe8e7899874de204128/botocore-1.5.26.tar.gz"; sha256 = "6b5bb7100f977c97e6d1ffde8358ff4d353d7e10d3e0c272a6ea21942122f4ac"; };
+      name = "botocore-1.5.29";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/26/cf/d43b37eba474549f125695825de658d7004ad37fda1621a2f92ae970435d/botocore-1.5.29.tar.gz"; sha256 = "3a3639d94326ca0dee59eca3701ed6aaecd4741bbb85098165b760dee880f11d"; };
       doCheck = commonDoCheck;
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [
@@ -213,25 +213,6 @@ let
 
 
 
-    "flake8" = python.mkDerivation {
-      name = "flake8-3.3.0";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/47/64/382631de5fd8dab367bedeff6b5b55fd9a7c883daa44f4032636e2d203ca/flake8-3.3.0.tar.gz"; sha256 = "b907a26dcf5580753d8f80f1be0ec1d5c45b719f7bac441120793d1a70b03f12"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [
-      self."mccabe"
-      self."pycodestyle"
-      self."pyflakes"
-    ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "";
-        license = licenses.mit;
-        description = "the modular source code checker: pep8, pyflakes and co";
-      };
-    };
-
-
-
     "httplib2" = python.mkDerivation {
       name = "httplib2-0.10.3";
       src = pkgs.fetchurl { url = "https://pypi.python.org/packages/e4/2e/a7e27d2c36076efeb8c0e519758968b20389adf57a9ce3af139891af2696/httplib2-0.10.3.tar.gz"; sha256 = "e404d3b7bd86c1bc931906098e7c1305d6a3a6dcef141b8bb1059903abb3ceeb"; };
@@ -272,21 +253,6 @@ let
         homepage = "";
         license = licenses.bsdOriginal;
         description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API.";
-      };
-    };
-
-
-
-    "mccabe" = python.mkDerivation {
-      name = "mccabe-0.6.1";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/06/18/fa675aa501e11d6d6ca0ae73a101b2f3571a565e0f7d38e062eec18a91ee/mccabe-0.6.1.tar.gz"; sha256 = "dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [ ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "";
-        license = licenses.mit;
-        description = "McCabe checker, plugin for flake8";
       };
     };
 
@@ -372,36 +338,6 @@ let
         homepage = "";
         license = licenses.bsdOriginal;
         description = "A collection of ASN.1-based protocols modules.";
-      };
-    };
-
-
-
-    "pycodestyle" = python.mkDerivation {
-      name = "pycodestyle-2.3.1";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/e1/88/0e2cbf412bd849ea6f1af1f97882add46a374f4ba1d2aea39353609150ad/pycodestyle-2.3.1.tar.gz"; sha256 = "682256a5b318149ca0d2a9185d365d8864a768a28db66a84a2ea946bcc426766"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [ ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "";
-        license = licenses.mit;
-        description = "Python style guide checker";
-      };
-    };
-
-
-
-    "pyflakes" = python.mkDerivation {
-      name = "pyflakes-1.5.0";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/5b/b7/dcd6ebc826065ca4ccd2406aac4378e1df6eb91124625d45d520219932a1/pyflakes-1.5.0.tar.gz"; sha256 = "aa0d4dff45c0cc2214ba158d29280f8fa1129f3e87858ef825930845146337f4"; };
-      doCheck = commonDoCheck;
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [ ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "";
-        license = licenses.mit;
-        description = "passive checker of Python programs";
       };
     };
 

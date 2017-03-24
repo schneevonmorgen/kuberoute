@@ -9,8 +9,13 @@ buildPythonPackage {
   propagatedBuildInputs =
     [ pykube effect tornado nose route53 jinja2 python-etcd boto3 ];
   buildInputs = [ python3 ];
-  src = ./..;
+  src = ../.;
   checkPhase = ''
     python $src/run-tests
+  '';
+  postUnpack = ''
+    echo "Delete eventually old build artifacts"
+    rm kuberoute/build -rfv
+    rm kuberoute/dist -rfv
   '';
 }

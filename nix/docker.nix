@@ -2,16 +2,16 @@ let
   nixpkgs = import ./pkgs.nix {};
 in
 { pkgs ? nixpkgs.pkgs ,
-  kuberoute ? nixpkgs.kuberoute,
+  kuberoute ? nixpkgs.callPackage ./default.nix {},
   image_name ? "kuberoute",
-  image_tag ? "latest",
+  image_tag ? "latest"
 }:
 pkgs.dockerTools.buildImage {
   name = image_name;
   tag = image_tag;
 
   # We want to have basic debugging tools in the image
-  contents = [ kuberoute pkgs.bash pkgs.curl pkgs.coreutils ];
+  contents = with pkgs; [ kuberoute bash curl coreutils ];
   runAsRoot = ''
     #!${pkgs.stdenv.shell}
 
