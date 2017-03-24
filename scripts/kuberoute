@@ -38,7 +38,7 @@ COMMON_DISPATCHER = ComposedDispatcher([
 def make_handler(
         dns_client_generator, kubeconfig_generator, namespaces,
         domain_label, name_label, failover_label, quota_label,
-        stores, s3_report):
+        stores, s3_report, debug=False):
     class Handler(kuberoute.tornado.RequestHandler):
         def get(self):
             effects = handler(
@@ -51,7 +51,8 @@ def make_handler(
                 failover_label,
                 quota_label,
                 stores,
-                s3_report
+                s3_report,
+                debug=debug,
             )
             sync_perform(COMMON_DISPATCHER, effects)
 
@@ -128,8 +129,13 @@ def handler(
         failover_label,
         quota_label,
         stores,
-        s3_report
+        s3_report,
+        debug=False,
 ):
+    def debug_msg(msg):
+        if debug:
+            print(msg)
+
     try:
         api = yield kubeconfig_generator()
 
@@ -146,7 +152,13 @@ def handler(
         stores.nodes.put(nodes)
 
         records_by_domain = get_name_record_updates(
-            services, pods, domain_label, name_label, failover_label, quota_label)
+            services,
+            pods,
+            domain_label,
+            name_label,
+            failover_label,
+            quota_label
+        )
         record_set = []
         for (domain, records) in records_by_domain.items():
             record_set += records
@@ -173,12 +185,25 @@ def handler(
                     60,
                     record.record_type
                 )
-                if not record_quota_fullfilled(record, nodes):
-                    record_set = yield failover
-                elif len(record.addresses) == 0:
+                if not record_quota_fullfilled(record, nodes) \
+                   or len(record.addresses) == 0:
+                    debug_msg(
+                        ( "Service {name} not considered alive, "
+                          "record set: {set}").format(
+                              name='.'.join([record.name, record.domain]),
+                              set=str(record)
+                          )
+                    )
                     record_set = yield failover
                 else:
                     record_set = yield success
+                    debug_msg(
+                        ("Service {name} considered alive, "
+                         "record set: {set}").format(
+                             name='.'.join([record.name, record.domain]),
+                             set=str(record)
+                         )
+                    )
             yield timestamp_update(dns_client)
         yield server.write_msg('Updated record sets.')
     except requests.exceptions.ConnectionError:
@@ -238,17 +263,25 @@ def health_handler(server):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Start kuberoute')
-    parser.add_argument('--config',
-                        dest='config',
-                        type=str,
-                        help='config file to consume, defaults to {default}'.format(
-                            default=CONFIG_DEFAULT
-                        )
+    parser.add_argument(
+        '--config',
+        dest='config',
+        type=str,
+        help='config file to consume, defaults to {default}'.format(
+            default=CONFIG_DEFAULT
+        )
     )
-    parser.add_argument('--port',
-                        dest='port',
-                        type=str,
-                        help='port to listen on, this command line flag overrides eventual port configurations from the config file',
+    parser.add_argument(
+        '--port',
+        dest='port',
+        type=str,
+        help='port to listen on, this command line flag overrides eventual ' +
+        'port configurations from the config file',
+    )
+    parser.add_argument(
+        '--debug',
+        help='Include debug messages in output',
+        action="store_true"
     )
     return parser.parse_args()
 
@@ -295,13 +328,17 @@ def main():
             (r'/', make_handler(
                 dns_client_generator=dns_client_generator,
                 kubeconfig_generator=kubeconfig_generator,
-                namespaces=list(map(lambda str: str.strip(), kuberoute_config['namespaces'].split(","))),
+                namespaces=list(map(
+                    lambda str: str.strip(),
+                    kuberoute_config['namespaces'].split(",")
+                )),
                 domain_label=kuberoute_config['domain_label'],
                 name_label=kuberoute_config['name_label'],
                 failover_label=kuberoute_config['failover_label'],
                 quota_label=kuberoute_config['quota_label'],
                 stores=stores,
                 s3_report=s3_report,
+                debug=args.debug,
             ))
         ])
     except KeyError as e:

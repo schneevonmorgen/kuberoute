@@ -1,5 +1,5 @@
 run:
-	nix-shell --command 'python3 scripts/kuberoute --config credentials.txt'
+	nix-shell --command 'python3 scripts/kuberoute --config credentials.txt --debug'
 
 update:
 	nix-shell -I nix/pkgs.nix nix/update.nix --show-trace

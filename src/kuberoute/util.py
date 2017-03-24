@@ -29,4 +29,3 @@ def check_condition(obj, condition_type):
         if condition['type'] == condition_type:
             return condition
     return None
-

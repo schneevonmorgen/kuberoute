@@ -39,7 +39,7 @@ def get_pods_for_service(service, pods):
                 safeget(service.obj, 'metadata', 'namespace')
             )
         )
-    
+
     return list(filter(
         filter_pod,
         pods
@@ -69,15 +69,15 @@ def get_name_record_updates(
 
     services: a list of all available services as returned by pykube
     pods: a list of all available pods as returned by pykube
-    domain_label: a string, all services with this label name are queried.  
-                  The value of this label defines, on which domain the 
+    domain_label: a string, all services with this label name are queried.
+                  The value of this label defines, on which domain the
                   service will be published, e.g. schneevonmorgen.com.
-    name_label: a string, all services with this label name are queried.  
-                The value of this label defines under which name the 
+    name_label: a string, all services with this label name are queried.
+                The value of this label defines under which name the
                 service will be published.
-    failover_label: a string, to get a failover address in case the service 
+    failover_label: a string, to get a failover address in case the service
                     is unavailable
-    quota_label: a string, to get the required quota for the service to be 
+    quota_label: a string, to get the required quota for the service to be
                  considered "live"
 
     Returns a dictionary where the keys are domains and the values are
@@ -115,6 +115,6 @@ def get_name_record_updates(
 
 
 def record_quota_fullfilled(record, nodes):
-    if record.quota is None:
+    if record.quota is None or record.quota == 0:
         return True
     return 100 * len(record.addresses) / len(nodes) >= record.quota
