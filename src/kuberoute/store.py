@@ -1,4 +1,5 @@
 import io
+import mimetypes
 import tempfile
 
 import boto3
@@ -28,7 +29,9 @@ class S3BucketKey(object):
             bucket_name,
             key,
             aws_access_key_id=None,
-            aws_secret_access_key=None):
+            aws_secret_access_key=None,
+            acl='private',
+            content_type=None):
         self.con = boto3.client(
             's3',
             aws_access_key_id=aws_access_key_id,
@@ -37,13 +40,19 @@ class S3BucketKey(object):
         )
         self.bucket_name = bucket_name
         self.key = key
+        self.acl = acl
+        self.content_type = content_type or mimetypes.guess_type(key)[0] or \
+            'application/octet-stream'
 
     def _write(self, content):
         with tempfile.TemporaryFile() as f:
             f.write(content.encode('utf-8'))
             f.seek(0)
             self.con.upload_fileobj(
-                f, self.bucket_name, self.key, {'ACL':'public-read'}
+                f, self.bucket_name, self.key, {
+                    'ACL': self.acl,
+                    'Content-Type': self.content_type
+                }
             )
 
     def write(self, content):
