@@ -2,8 +2,26 @@
 
 import os
 import subprocess
+import sys
 
-pythonpath = os.environ['PYTHONPATH']
+
+def virtualenv_pypath():
+    """
+    Returns the python path if running in an activated virtual env.
+    """
+    virtual_env = os.environ.get('VIRTUAL_ENV')
+    if not virtual_env:
+        return
+
+    interpreter = "python%s" % sys.version[:3]
+
+    site_packages = os.path.join(virtual_env, "lib", interpreter,
+                                 "site-packages")
+
+    return site_packages
+
+
+pythonpath = os.environ.get('PYTHONPATH') or virtualenv_pypath()
 cwd = os.getcwd()
 
 

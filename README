@@ -177,6 +177,10 @@ state reporting, write something like this into your config file ::
   bucket_name = statusreport-bucket
   # The "filename" in the bucket that you want to report to
   key = file/in/bucket
+  # The ACL for the report (defaults to private)
+  acl = public-read
+  # The content type for the report (guesses from key by default)
+  content_type = application/json
 
 The output format of the file is json.
 

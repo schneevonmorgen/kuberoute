@@ -233,7 +233,13 @@ def report_state_to_s3(records, nodes, cluster_available, s3_report):
         'available': cluster_available,
         'services': record_info,
     }
-    yield s3_report.write(json.dumps(cluster_info))
+    cluster_info_json = json.dumps(
+        cluster_info,
+        sort_keys=True,
+        indent=4,
+        separators=(',', ': ')
+    )
+    yield s3_report.write(cluster_info_json)
 
 
 @do
@@ -308,6 +314,8 @@ def main():
             bucket_name=s3_report_config['bucket_name'],
             aws_access_key_id=s3_report_config['aws_access_key_id'],
             aws_secret_access_key=s3_report_config['aws_secret_access_key'],
+            acl=s3_report_config.get('acl', 'private'),
+            content_type=s3_report_config.get('content_type', 'application/json'),
         )
     except (configparser.NoSectionError, KeyError):
         s3_report = None
