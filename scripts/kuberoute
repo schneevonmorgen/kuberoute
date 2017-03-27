@@ -315,7 +315,10 @@ def main():
             aws_access_key_id=s3_report_config['aws_access_key_id'],
             aws_secret_access_key=s3_report_config['aws_secret_access_key'],
             acl=s3_report_config.get('acl', 'private'),
-            content_type=s3_report_config.get('content_type', 'application/json'),
+            content_type=s3_report_config.get(
+                'content_type',
+                'application/json'
+            ),
         )
     except (configparser.NoSectionError, KeyError):
         s3_report = None
