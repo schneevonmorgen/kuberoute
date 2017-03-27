@@ -196,7 +196,6 @@ def handler(
                     )
                     record_set = yield failover
                 else:
-                    record_set = yield success
                     debug_msg(
                         ("Service {name} considered alive, "
                          "record set: {set}").format(
@@ -204,6 +203,7 @@ def handler(
                              set=str(record)
                          )
                     )
+                    record_set = yield success
             yield timestamp_update(dns_client)
         yield server.write_msg('Updated record sets.')
     except requests.exceptions.ConnectionError:
