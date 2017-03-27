@@ -51,7 +51,7 @@ class S3BucketKey(object):
             self.con.upload_fileobj(
                 f, self.bucket_name, self.key, {
                     'ACL': self.acl,
-                    'Content-Type': self.content_type
+                    'ContentType': self.content_type
                 }
             )
 
