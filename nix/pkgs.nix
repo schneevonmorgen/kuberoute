@@ -1,17 +1,12 @@
 let
   _pkgs = import <nixpkgs> {};
-
   load_from_json = path: builtins.fromJSON (builtins.readFile path);
-
-  nixpkgs = import (_pkgs.fetchFromGitHub (load_from_json ./nixpkgs.json)) {};
-
+in
+{ nixpkgs ? import (_pkgs.fetchFromGitHub (load_from_json ./nixpkgs.json)) {}
+}:
+let
   mozilla_releng_lib = _pkgs.fetchFromGitHub (load_from_json ./mozilla_releng.json);
   mozilla_releng = import ("${mozilla_releng_lib}/nix") { pkgs = nixpkgs; };
-in
-{ pkgs ? nixpkgs
-}:
-
-let
 
   fix' = f: let x = f x // { __unfix__ = f; }; in x;
   extends = f: rattrs: self:
@@ -35,7 +30,7 @@ let
   };
 
   base = self: {
-    pkgs = pkgs // {
+    pkgs = nixpkgs // {
       name = "nixpkgs";
       update = update_pkgs;
     };

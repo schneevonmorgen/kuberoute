@@ -1,9 +1,11 @@
+{ nixpkgs ? null }:
 let
-  nixpkgs = import nix/pkgs.nix {};
+  pkgs =
+    if builtins.isNull nixpkgs
+    then import nix/pkgs.nix {}
+    else import nix/pkgs.nix { nixpkgs = nixpkgs; };
 in
-{ pkgs ? nixpkgs.pkgs,
-  pythonPackages ? nixpkgs.pythonPackages }:
-(nixpkgs.callPackage nix/default.nix {}).overrideDerivation( old:
+(pkgs.callPackage nix/default.nix {}).overrideDerivation( old:
   {
     shellHook = ''
       export PYTHONPATH=$PWD/src:$PYTHONPATH

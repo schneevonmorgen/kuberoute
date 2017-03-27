@@ -193,11 +193,14 @@ building
 nix
 ---
 
-There is a file ``nix/default.nix`` that builds kuberoute
-installation.  It might be that not all the required packages are
-currently in nixpkgs.  In that case you could import
-``nix/requirements.nix`` to get access to the pypi packages used for
-development.
+There is a ``default.nix`` in the root of this repository.  You can
+build kuberoute by simply executing ``nix-build`` in that directory.
+This will build kuberoute with a predefined nix package set by
+default.  You can override the nixpkgs package set used by passing it
+as an argument.  Here is an example::
+  
+  nix-build --arg "nixpkgs" "import /src/nixpkgs-master {}"
+
 
 pip
 ---
