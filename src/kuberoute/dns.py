@@ -76,7 +76,7 @@ class Route53Client(NameService):
         will_delete = (
             values is None or
             len(values) is 0
-        )            
+        )
 
         if record_set and not will_delete:
             if sorted(record_set.records) != sorted(values) or \
@@ -142,4 +142,3 @@ class FakeDNSClient(NameService):
 
     def create_or_update_record_set(self, *args):
         print("Update dns record", args)
-

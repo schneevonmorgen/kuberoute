@@ -2,6 +2,7 @@
 
 import argparse
 import configparser
+import ipaddress
 import json
 import logging
 import sys
@@ -171,12 +172,22 @@ def handler(
                     failover_addresses = None
                 else:
                     failover_addresses = [record.failover]
+
+                # if we can parse the failover address as an ip
+                # address we can assume that a 'A' record type is
+                # valid
+                try:
+                    ipaddress.ip_address(record.failover)
+                    failover_record_type = 'A'
+                except ValueError:
+                    failover_record_type = 'CNAME'
+
                 failover = kuberoute.io.update_name_record(
                     dns_client,
                     record.name,
                     failover_addresses,
                     60,
-                    record.record_type
+                    failover_record_type
                 )
                 success = kuberoute.io.update_name_record(
                     dns_client,
