@@ -198,7 +198,7 @@ build kuberoute by simply executing ``nix-build`` in that directory.
 This will build kuberoute with a predefined nix package set by
 default.  You can override the nixpkgs package set used by passing it
 as an argument.  Here is an example::
-  
+
   nix-build --arg "nixpkgs" "import /src/nixpkgs-master {}"
 
 

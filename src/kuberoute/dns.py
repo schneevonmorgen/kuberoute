@@ -28,7 +28,8 @@ class Record(object):
         )
 
     def __str__(self):
-        return "Record: (name=%(name)s,addresses=%(addresses)s,quota=%(quota)s,record_type=%(record_type)s,failover=%(failover)s)" % dict(
+        return "Record: (domain=%(domain)s,name=%(name)s,addresses=%(addresses)s,quota=%(quota)s,record_type=%(record_type)s,failover=%(failover)s)" % dict(
+            domain=self.domain,
             name=self.name,
             addresses=self.addresses,
             quota=self.quota,
