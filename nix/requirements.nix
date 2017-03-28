@@ -147,8 +147,8 @@ let
 
 
     "botocore" = python.mkDerivation {
-      name = "botocore-1.5.29";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/26/cf/d43b37eba474549f125695825de658d7004ad37fda1621a2f92ae970435d/botocore-1.5.29.tar.gz"; sha256 = "3a3639d94326ca0dee59eca3701ed6aaecd4741bbb85098165b760dee880f11d"; };
+      name = "botocore-1.5.30";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/f7/52/7de9b8eacc3cd90b9687435cc9573b682dccf929ff532a302385d3af825a/botocore-1.5.30.tar.gz"; sha256 = "c06efafa14710da1c6019ab5b2668015cd21d3781ffe371d3fc2610332566bbf"; };
       doCheck = commonDoCheck;
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [
