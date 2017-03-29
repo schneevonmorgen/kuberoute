@@ -106,7 +106,9 @@ def get_kubeconfig_generator(config_kind, *args, **kwargs):
                         kwargs[key] = False
                         print('WARNING: TLS verify disabled', file=sys.stderr)
                     else:
-                        raise Exception('Invalid config error for field kubernetes_url.verify')
+                        raise Exception(
+                            'Invalid config error for field kubernetes_url.verify'
+                        )
             return auth.from_url(*args, **kwargs)
         return get_config_from_url
     elif config_kind == 'kubeconfig':

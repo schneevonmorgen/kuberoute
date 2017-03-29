@@ -5,6 +5,7 @@ import sys
 from abc import ABCMeta, abstractmethod
 
 import etcd
+import kuberoute.exceptions
 import route53
 
 
@@ -64,11 +65,19 @@ class Route53Client(NameService):
         for zone in conn.list_hosted_zones(page_chunks=1000):
             if zone.name == '%s.' % domain:
                 return zone
+        return None
 
     def _get_record_set(self, hostname):
+        if self.zone is None:
+            raise kuberoute.exception.DNSError(
+                'Could not find hosted zone for domain "{domain}"'.format(
+                    domain = self.domain
+                )
+            )
         for record_set in self.zone.record_sets:
             if record_set.name == '%s.' % hostname:
                 return record_set
+        return None
 
     def create_or_update_record_set(self, name, values, ttl, record_type):
         hostname = "%s.%s" % (name, self.domain)
