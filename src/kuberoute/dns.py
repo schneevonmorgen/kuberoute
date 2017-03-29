@@ -11,7 +11,7 @@ import route53
 class Record(object):
     def __init__(self, name, domain, addresses, failover, record_type='A', quota=0):
         self.name = name
-        self.addresses = addresses
+        self.addresses = list(set(addresses))
         self.quota = quota
         self.record_type = record_type
         self.failover = failover
