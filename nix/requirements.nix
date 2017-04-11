@@ -66,8 +66,8 @@ let
   generated = self: {
 
     "Jinja2" = python.mkDerivation {
-      name = "Jinja2-2.9.5";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/71/59/d7423bd5e7ddaf3a1ce299ab4490e9044e8dfd195420fc83a24de9e60726/Jinja2-2.9.5.tar.gz"; sha256 = "702a24d992f856fa8d5a7a36db6128198d0c21e1da34448ca236c42e92384825"; };
+      name = "Jinja2-2.9.6";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/90/61/f820ff0076a2599dd39406dcb858ecb239438c02ce706c8e91131ab9c7f1/Jinja2-2.9.6.tar.gz"; sha256 = "ddaa01a212cd6d641401cb01b605f4a4d9f37bfc93043d7f760ec70fb99ff9ff"; };
       doCheck = commonDoCheck;
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [
@@ -147,8 +147,8 @@ let
 
 
     "botocore" = python.mkDerivation {
-      name = "botocore-1.5.30";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/f7/52/7de9b8eacc3cd90b9687435cc9573b682dccf929ff532a302385d3af825a/botocore-1.5.30.tar.gz"; sha256 = "c06efafa14710da1c6019ab5b2668015cd21d3781ffe371d3fc2610332566bbf"; };
+      name = "botocore-1.5.38";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/e4/f9/b7026f410edf33b6c10143482b42d0168c7ffdb14dcc89fe0eb4c7f2d7c9/botocore-1.5.38.tar.gz"; sha256 = "dd6314cee663ccbb96aa115ec188075567df685956e43df22e795cf450d49b11"; };
       doCheck = commonDoCheck;
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [
@@ -401,8 +401,8 @@ let
 
 
     "pytz" = python.mkDerivation {
-      name = "pytz-2016.10";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/d0/e1/aca6ef73a7bd322a7fc73fd99631ee3454d4fc67dc2bee463e2adf6bb3d3/pytz-2016.10.tar.bz2"; sha256 = "7016b2c4fa075c564b81c37a252a5fccf60d8964aa31b7f5eae59aeb594ae02b"; };
+      name = "pytz-2017.2";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/a4/09/c47e57fc9c7062b4e83b075d418800d322caa87ec0ac21e6308bd3a2d519/pytz-2017.2.zip"; sha256 = "f5c056e8f62d45ba8215e5cb8f50dfccb198b4b9fbea8500674f3443e4689589"; };
       doCheck = commonDoCheck;
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [ ];
@@ -517,8 +517,8 @@ let
 
 
     "tornado" = python.mkDerivation {
-      name = "tornado-4.4.2";
-      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/1e/7c/ea047f7bbd1ff22a7f69fe55e7561040e3e54d6f31da6267ef9748321f98/tornado-4.4.2.tar.gz"; sha256 = "2898f992f898cd41eeb8d53b6df75495f2f423b6672890aadaf196ea1448edcc"; };
+      name = "tornado-4.4.3";
+      src = pkgs.fetchurl { url = "https://pypi.python.org/packages/5c/0b/2e5cef0d30811532b27ece726fb66a41f63344af8b693c90cec9474d9022/tornado-4.4.3.tar.gz"; sha256 = "f267acc96d5cf3df0fd8a7bfb5a91c2eb4ec81d5962d1a7386ceb34c655634a8"; };
       doCheck = commonDoCheck;
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [ ];
