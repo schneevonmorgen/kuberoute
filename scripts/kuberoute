@@ -248,7 +248,7 @@ def report_state_to_s3(records, nodes, cluster_available, s3_report):
     ])
     cluster_info = {
         'nodes': report_from_nodes(nodes),
-        'available': cluster_available,
+        'apiserver_available': cluster_available,
         'services': record_info,
     }
     cluster_info_json = json.dumps(
