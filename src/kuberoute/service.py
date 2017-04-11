@@ -137,7 +137,11 @@ def get_name_record_updates(
     return records
 
 
+def current_quota(record, nodes):
+    return 100 * len(record.addresses) / len(nodes)
+
+
 def record_quota_fullfilled(record, nodes):
     if record.quota is None or record.quota == 0:
         return True
-    return 100 * len(record.addresses) / len(nodes) >= record.quota
+    return current_quota(record, nodes) >= record.quota

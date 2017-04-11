@@ -20,7 +20,8 @@ from effect.io import stdio_dispatcher
 from kuberoute.dns import FakeDNSClient, Route53Client, SkyDNSClient
 from kuberoute.intent import PYKUBE_DISPATCHER, WebserverWrite
 from kuberoute.reporting import report_from_nodes
-from kuberoute.service import get_name_record_updates, record_quota_fullfilled
+from kuberoute.service import (current_quota, get_name_record_updates,
+                               record_quota_fullfilled)
 from kuberoute.store import MutableStore, S3BucketKey
 
 Stores = namedtuple('Stores', ['records', 'nodes'])
@@ -239,6 +240,7 @@ def report_state_to_s3(records, nodes, cluster_available, s3_report):
          {
              'endpoints': record.addresses,
              'quota': record.quota,
+             'current_quota': int(current_quota(record, nodes)),
              'healthy': record_quota_fullfilled(record, nodes),
          }
         )
