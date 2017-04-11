@@ -13,26 +13,7 @@ sdist:
 docker_image:
 	bash build_docker_image.sh
 
-replace:
-	gdo kubernetes/secret.yml
-	kubectl replace -f kubernetes/service.yml
-	kubectl replace -f kubernetes/secret.yml
-	kubectl replace -f kubernetes/deployment.yml
-
-create:
-	gdo kubernetes/secret.yml
-	kubectl create -f kubernetes/service.yml
-	kubectl create -f kubernetes/secret.yml
-	kubectl create -f kubernetes/deployment.yml
-
-
-delete:
-	gdo kubernetes/secret.yml
-	kubectl delete -f kubernetes/service.yml
-	kubectl delete -f kubernetes/secret.yml
-	kubectl delete -f kubernetes/deployment.yml
-
 flake8:
-	nix-shell -I nix/pkgs.nix -p pythonPackages.packages.flake8 p.pkgs.python3 --command 'flake8 src/kuberoute'
+	nix-shell -p python3Packages.flake8 python3 --command 'flake8 src/kuberoute'
 
 .PHONY: run update test replace create delete flake8

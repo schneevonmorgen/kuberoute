@@ -24,9 +24,9 @@ def add_if_missing(d, path, value):
 
 class MockAPIObject(object):
     def __init__(self, specs):
-        self.obj = specs        
+        self.obj = specs
 
-        
+
 class MockPodObject(MockAPIObject):
     def __init__(self, specs):
         super().__init__(specs)
@@ -43,7 +43,7 @@ class MockPodObject(MockAPIObject):
                 'type': 'Ready',
                 'status': 'True',
             }]
-        
+
 
 TESTSERVICE=MockAPIObject({
     'apiVersion': 'v1',
@@ -54,6 +54,26 @@ TESTSERVICE=MockAPIObject({
             'label1': 'value1',
             'kuberoute_domain': 'domain',
             'kuberoute_name': 'name',
+            'kuberoute_failover': 'failover.url',
+        },
+    },
+    'spec': {
+        'selector': {
+            'selectorlabel': 'selectorvalue'
+        },
+        'type': 'NodePort',
+    },
+})
+
+TESTSERVICE_REPLACE=MockAPIObject({
+    'apiVersion': 'v1',
+    'metadata': {
+        'name': 'testservice',
+        'namespace': 'default',
+        'labels': {
+            'label1': 'value1',
+            'kuberoute_domain': 'domain',
+            'kuberoute_name': '{name_replace}',
             'kuberoute_failover': 'failover.url',
         },
     },
@@ -224,7 +244,7 @@ class ServiceTests(unittest.TestCase):
     def test_get_pods_for_service_other_namespace(self):
         filtered_pods = get_pods_for_service(self.service, self.pods)
         self.assertEqual(len(filtered_pods), 1)
-        
+
 
     def test_get_host_ip(self):
         self.assertEqual(get_host_ip(self.pod), '1.0.0.0')
@@ -237,7 +257,13 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(
             {},
             get_name_record_updates(
-                [], [], 'kuberoute_domain', 'kuberoute_name', 'kuberoute_failover', 'kuberoute_quota')
+                [],
+                [],
+                'kuberoute_domain',
+                'kuberoute_name',
+                'kuberoute_failover',
+                'kuberoute_quota'
+            )
         )
 
     def test_get_name_record_updates(self):
@@ -257,6 +283,27 @@ class ServiceTests(unittest.TestCase):
                 'kuberoute_name',
                 'kuberoute_failover',
                 'kuberoute_quota',
+            )
+        )
+
+    def test_get_name_record_replacement(self):
+        self.assertEqual(
+            {
+                'domain': [Record(
+                    name='name',
+                    domain='domain',
+                    addresses=['1.0.0.0'],
+                    failover='failover.url'
+                )],
+            },
+            get_name_record_updates(
+                [TESTSERVICE_REPLACE],
+                [self.pod, self.pod2],
+                'kuberoute_domain',
+                'kuberoute_name',
+                'kuberoute_failover',
+                'kuberoute_quota',
+                replacements={ 'name_replace': 'name'}
             )
         )
 

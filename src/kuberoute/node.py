@@ -1,7 +1,8 @@
 from kuberoute.util import check_condition, safeget
 
+
 def node_unschedulable(node):
-    return safeget(node, 'spec', 'unschedulable') == True
+    return safeget(node, 'spec', 'unschedulable')
 
 
 def node_ready(node):

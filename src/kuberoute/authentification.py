@@ -1,6 +1,5 @@
 """This module provides the means to conntect to a kubernetes api server"""
 import base64
-import os
 
 import effect
 import jinja2

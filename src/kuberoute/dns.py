@@ -10,7 +10,15 @@ import route53
 
 
 class Record(object):
-    def __init__(self, name, domain, addresses, failover, record_type='A', quota=0):
+    def __init__(
+            self,
+            name,
+            domain,
+            addresses,
+            failover,
+            record_type='A',
+            quota=0
+    ):
         self.name = name
         self.addresses = list(set(addresses))
         self.quota = quota
@@ -29,7 +37,7 @@ class Record(object):
         )
 
     def __str__(self):
-        return "Record: (domain=%(domain)s,name=%(name)s,addresses=%(addresses)s,quota=%(quota)s,record_type=%(record_type)s,failover=%(failover)s)" % dict(
+        return "Record: (domain=%(domain)s,name=%(name)s,addresses=%(addresses)s,quota=%(quota)s,record_type=%(record_type)s,failover=%(failover)s)" % dict( # noqa
             domain=self.domain,
             name=self.name,
             addresses=self.addresses,
@@ -71,7 +79,7 @@ class Route53Client(NameService):
         if self.zone is None:
             raise kuberoute.exception.DNSError(
                 'Could not find hosted zone for domain "{domain}"'.format(
-                    domain = self.domain
+                    domain=self.domain
                 )
             )
         for record_set in self.zone.record_sets:
@@ -133,7 +141,7 @@ class SkyDNSClient(NameService):
             domain=self.domain
         )
         path = '/skydns/' + '/'.join(list(reversed(full_name.split('.'))))
-        for index in range(1,len(values) + 1):
+        for index in range(1, len(values) + 1):
             entry = {
                 'host': values[index-1]
             }

@@ -1,4 +1,3 @@
-import io
 import mimetypes
 import tempfile
 

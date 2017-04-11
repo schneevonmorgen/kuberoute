@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='kuberoute',
-      version='1.0',
+      version='1.1',
       description='Update DNS records based on kubernetes services',
       author='Sebastian Jordan',
       author_email='jordan@schneevonmorgen.com',

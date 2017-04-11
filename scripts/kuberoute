@@ -39,7 +39,7 @@ COMMON_DISPATCHER = ComposedDispatcher([
 def make_handler(
         dns_client_generator, kubeconfig_generator, namespaces,
         domain_label, name_label, failover_label, quota_label,
-        stores, s3_report, debug=False):
+        stores, s3_report, debug=False, replacements={}):
     class Handler(kuberoute.tornado.RequestHandler):
         def get(self):
             effects = handler(
@@ -54,6 +54,7 @@ def make_handler(
                 stores,
                 s3_report,
                 debug=debug,
+                replacements=replacements,
             )
             sync_perform(COMMON_DISPATCHER, effects)
 
@@ -134,6 +135,7 @@ def handler(
         stores,
         s3_report,
         debug=False,
+        replacements={},
 ):
     def debug_msg(msg):
         if debug:
@@ -160,7 +162,8 @@ def handler(
             domain_label,
             name_label,
             failover_label,
-            quota_label
+            quota_label,
+            replacements=replacements,
         )
         record_set = []
         for (domain, records) in records_by_domain.items():
@@ -319,11 +322,15 @@ def main():
         klass_name=config['kuberoute']['dns_backend'],
         **(config[config['kuberoute']['dns_backend']])
     )
+    try:
+        replacements = config['replacements']
+    except (configparser.NoSectionError, KeyError):
+        replacements = {}
     kubeconfig_kind = config['kuberoute']['kubeconfig_kind']
     try:
         s3_report_config = config['s3report']
         s3_report = S3BucketKey(
-            key=s3_report_config['key'],
+            key=s3_report_config['key'].format(**replacements),
             bucket_name=s3_report_config['bucket_name'],
             aws_access_key_id=s3_report_config['aws_access_key_id'],
             aws_secret_access_key=s3_report_config['aws_secret_access_key'],
@@ -363,6 +370,7 @@ def main():
                 stores=stores,
                 s3_report=s3_report,
                 debug=args.debug,
+                replacements=replacements,
             ))
         ])
     except KeyError as e:

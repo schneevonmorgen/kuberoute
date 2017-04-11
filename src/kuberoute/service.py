@@ -64,7 +64,13 @@ def is_pod_ready(pod):
 
 
 def get_name_record_updates(
-        services, pods, domain_label, name_label, failover_label, quota_label):
+        services,
+        pods,
+        domain_label,
+        name_label,
+        failover_label,
+        quota_label,
+        replacements={}):
     """Generate name records from a list of services and a list of pods
 
     services: a list of all available services as returned by pykube
@@ -90,8 +96,20 @@ def get_name_record_updates(
                 has_label(name_label, service)
                ):
             continue
-        domain = safeget(service.obj, 'metadata', 'labels', domain_label)
-        name = safeget(service.obj, 'metadata', 'labels', name_label)
+        domain = safeget(
+            service.obj,
+            'metadata',
+            'labels',
+            domain_label).format(
+                **replacements
+            )
+        name = safeget(
+            service.obj,
+            'metadata',
+            'labels',
+            name_label).format(
+                **replacements
+            )
         if domain is None or name is None:
             continue
         filtered_pods = filter(
@@ -101,7 +119,12 @@ def get_name_record_updates(
         ip_addresses = list(map(get_host_ip, filtered_pods))
         failover = safeget(service.obj, 'metadata', 'labels', failover_label)
         try:
-            quota = int(safeget(service.obj, 'metadata', 'labels', quota_label))
+            quota = int(safeget(
+                service.obj,
+                'metadata',
+                'labels',
+                quota_label
+            ))
         except TypeError:
             quota = 0
         if records.get(domain, None) is None:
