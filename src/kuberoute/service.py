@@ -2,7 +2,8 @@
 services"""
 
 from kuberoute.dns import Record
-from kuberoute.util import check_condition, dictionary_is_subset, safeget
+from kuberoute.util import (check_condition, dictionary_is_subset,
+                            render_template_string, safeget)
 
 
 def has_label(labelname, service):
@@ -96,20 +97,24 @@ def get_name_record_updates(
                 has_label(name_label, service)
                ):
             continue
-        domain = safeget(
-            service.obj,
-            'metadata',
-            'labels',
-            domain_label).format(
-                **replacements
-            )
-        name = safeget(
-            service.obj,
-            'metadata',
-            'labels',
-            name_label).format(
-                **replacements
-            )
+        domain = render_template_string(
+            safeget(
+                service.obj,
+                'metadata',
+                'labels',
+                domain_label
+            ),
+            **replacements
+        )
+        name = render_template_string(
+            safeget(
+                service.obj,
+                'metadata',
+                'labels',
+                name_label
+            ),
+            **replacements
+        )
         if domain is None or name is None:
             continue
         filtered_pods = filter(

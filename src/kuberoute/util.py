@@ -29,3 +29,9 @@ def check_condition(obj, condition_type):
         if condition['type'] == condition_type:
             return condition
     return None
+
+
+def render_template_string(msg, **replacements):
+    return msg.replace("__-", "{").replace("-__", "}").format(
+        **replacements
+    )
