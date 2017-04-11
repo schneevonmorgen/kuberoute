@@ -201,12 +201,25 @@ def handler(
                     60,
                     record.record_type
                 )
-                if not record_quota_fullfilled(record, nodes) \
-                   or len(record.addresses) == 0:
+                service_full_name = '.'.join([record.name, record.domain])
+                if not record_quota_fullfilled(record, nodes) and \
+                   record.failover is None and \
+                   record.addresses != 0:
+                    debug_msg(
+                        ("Service {name} not considered alive, "
+                         "but no failover is configured.  Because "
+                         "there are still endpoints available we will "
+                         "route to those.").format(
+                             name=service_full_name
+                         )
+                    )
+                    yield success
+                elif not record_quota_fullfilled(record, nodes) \
+                     or len(record.addresses) == 0:
                     debug_msg(
                         ( "Service {name} not considered alive, "
                           "record set: {set}").format(
-                              name='.'.join([record.name, record.domain]),
+                              name=service_full_name,
                               set=str(record)
                           )
                     )
@@ -215,7 +228,7 @@ def handler(
                     debug_msg(
                         ("Service {name} considered alive, "
                          "record set: {set}").format(
-                             name='.'.join([record.name, record.domain]),
+                             name=service_full_name,
                              set=str(record)
                          )
                     )
