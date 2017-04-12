@@ -192,10 +192,10 @@ templating
 
 Kuberoute offers rudimentary templating support certain service labels
 and configuration options.  We use pythons ``format`` syntax for that,
-but replace braces with ``__-`` for opening brace and ``-__`` for
-closing brace.  In your configuration file you can define a section
-called replacements that allows you to define substitutions for
-template strings.  Here is an example::
+but replace braces with ``_TEMPLATE_START_`` for opening brace and
+``_TEMPLATE_END_`` for closing brace.  In your configuration file you
+can define a section called replacements that allows you to define
+substitutions for template strings.  Here is an example::
 
   [replacements]
   cluster_id = signus-5-expanse
@@ -209,7 +209,7 @@ When declaring a service you could something like the following::
     name: song-contest
     labels:
       kuberoute_domain: planet.music
-      kuberoute_name: __-slogan-__
+      kuberoute_name: _TEMPLATE_START_slogan_TEMPLATE_END_
 
 This would result in a name entry ``get-schwifty.planet.music`` on
 your configured DNS service.  This feature can also be used in your s3
@@ -217,7 +217,7 @@ key for the status report.  If your config would also contain the
 following::
 
   [s3_report]
-  key = __-cluster_id-__/kuberoute.json
+  key = _TEMPLATE_END_cluster_id_TEMPLATE_END_/kuberoute.json
 
 kuberoute will put your status report under the key
 ``get-schwifty/kuberoute.json``

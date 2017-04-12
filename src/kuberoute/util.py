@@ -32,6 +32,6 @@ def check_condition(obj, condition_type):
 
 
 def render_template_string(msg, **replacements):
-    return msg.replace("__-", "{").replace("-__", "}").format(
+    return msg.replace("_TEMPLATE_START_", "{").replace("_TEMPLATE_END_", "}").format(
         **replacements
     )

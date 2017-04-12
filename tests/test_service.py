@@ -73,7 +73,7 @@ TESTSERVICE_REPLACE=MockAPIObject({
         'labels': {
             'label1': 'value1',
             'kuberoute_domain': 'domain',
-            'kuberoute_name': '__-name_replace-__',
+            'kuberoute_name': '_TEMPLATE_START_name_replace_TEMPLATE_END_',
             'kuberoute_failover': 'failover.url',
         },
     },
