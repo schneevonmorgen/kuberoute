@@ -282,3 +282,10 @@ testing
 We use ``nosetests`` as a test runner.  All tests are located in the
 ``tests`` directory.  To run the tests the src files should be your
 ``PYTHONPATH``. ``./run-tests`` does that for you.
+
+debugging
+---------
+
+There is another DNS implementation in kubeoroute called ``fakedns``.
+This will do nothing more then just print changes kuberoute world do
+to ``stdout``.
