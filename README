@@ -187,6 +187,24 @@ state reporting, write something like this into your config file ::
 
 The output format of the file is json.
 
+dns heartbeat
+--------------
+
+You can configure kuberoute to send it's heartbeat to the DNS service.
+This would give you the possibility check if kuberoute is still
+talking to the DNS service.  The **default** heartbeat interval is
+**one minute**.  Kuberoute does this by setting a "fake" name entry
+for each domain it is configured to talk to.  You can enable this
+behavior by defining a ``[heartbeat]`` section in your kuberoute
+configuration file ::
+
+  [heartbeat]
+  name_template = heartbeat
+  timestamp_template = _TEMPLATE_START_timestamp_TEMPLATE_END_.timestamp.non.valid
+
+The ``timestamp_template`` entry dictates in which format the
+timestamp will be stored in the name service.
+
 templating
 ----------
 
@@ -287,5 +305,5 @@ debugging
 ---------
 
 There is another DNS implementation in kubeoroute called ``fakedns``.
-This will do nothing more then just print changes kuberoute world do
+This will do nothing more then just print changes kuberoute would do
 to ``stdout``.

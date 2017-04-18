@@ -41,7 +41,8 @@ COMMON_DISPATCHER = ComposedDispatcher([
 def make_handler(
         dns_client_generator, kubeconfig_generator, namespaces,
         domain_label, name_label, failover_label, quota_label,
-        stores, s3_report, debug=False, replacements={}):
+        stores, s3_report, name_template, timestamp_template, debug=False,
+        replacements={}):
     class Handler(kuberoute.tornado.RequestHandler):
         def get(self):
             effects = handler(
@@ -55,6 +56,8 @@ def make_handler(
                 quota_label,
                 stores,
                 s3_report,
+                name_template,
+                timestamp_template,
                 debug=debug,
                 replacements=replacements,
             )
@@ -136,6 +139,8 @@ def handler(
         quota_label,
         stores,
         s3_report,
+        name_template,
+        timestamp_template,
         debug=False,
         replacements={},
 ):
@@ -234,7 +239,13 @@ def handler(
                          )
                     )
                     yield success
-            yield timestamp_update(dns_client)
+            if name_template is not None:
+                yield timestamp_update(
+                    dns_client,
+                    name_template,
+                    timestamp_template,
+                    replacements
+                )
         yield server.write_msg('Updated record sets.')
         yield report_state_to_s3(record_set, nodes, True, s3_report)
     except requests.exceptions.ConnectionError:
@@ -275,15 +286,24 @@ def report_state_to_s3(records, nodes, cluster_available, s3_report):
 
 
 @do
-def timestamp_update(dns_client):
+def timestamp_update(
+        dns_client, name_template, timestamp_template, replacements):
     current_time = yield kuberoute.io.get_time()
-    name = 'updatecheck.kuberoute'
-    cname = "{year}-{month}-{day}-{hour}-{minute}.schneevonmorgen.com".format(
+    timestamp_string = "{year}-{month}-{day}-{hour}-{minute}".format(
         year=current_time.year,
         month=current_time.month,
         day=current_time.day,
         hour=current_time.hour,
         minute=current_time.minute
+    )
+    name = render_template_string(
+        name_template,
+        **replacements
+    )
+    cname = render_template_string(
+        timestamp_template,
+        timestamp=timestamp_string,
+        **replacements
     )
     record_set = yield kuberoute.io.update_name_record(
         dns_client,
@@ -359,6 +379,20 @@ def main():
         )
     except (configparser.NoSectionError, KeyError):
         s3_report = None
+
+    try:
+        heartbeat_config = config['heartbeat']
+    except KeyError:
+        heartbeat_config = {}
+    name_template = heartbeat_config.get(
+        'name_template',
+        None
+    )
+    timestamp_template = heartbeat_config.get(
+        'timestamp_template',
+        '_TEMPLATE_START_timestamp_TEMPLATE_END_.kuberoute.timestamp'
+    )
+
     try:
         kubeconfig_kwargs = config[kubeconfig_kind]
     except (configparser.NoSectionError, KeyError):
@@ -386,6 +420,8 @@ def main():
                 quota_label=kuberoute_config['quota_label'],
                 stores=stores,
                 s3_report=s3_report,
+                name_template=name_template,
+                timestamp_template=timestamp_template,
                 debug=args.debug,
                 replacements=replacements,
             ))
