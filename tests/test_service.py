@@ -206,6 +206,33 @@ TESTPOD_IN_OTHER_NAMESPACE=MockPodObject({
     }
 })
 
+TEST_NODE_1={
+    'status': {
+        'addresses': [
+            {
+                'address': '1.0.0.0',
+                'type': 'InternalIP',
+            },
+        ],
+    },
+}
+
+TEST_NODE_2={
+    'spec': {
+        'unschedulable': True,
+    },
+    'status': {
+        'addresses': [
+            {
+                'address': '1.0.0.1',
+                'type': 'InternalIP',
+            },
+        ],
+    },
+}
+
+TEST_NODES = [ TEST_NODE_1, TEST_NODE_2 ]
+
 
 class ServiceTests(unittest.TestCase):
     def setUp(self):
@@ -214,6 +241,7 @@ class ServiceTests(unittest.TestCase):
         self.pod2 = TESTPOD_NOT_IN_SERVICE
         self.pod3 = TESTPOD_IN_OTHER_NAMESPACE
         self.pods = [ self.pod, self.pod2, self.pod3 ]
+        self.nodes = TEST_NODES
 
     def test_has_label(self):
         self.assertTrue(has_label('label1', self.service))
@@ -259,6 +287,7 @@ class ServiceTests(unittest.TestCase):
             get_name_record_updates(
                 [],
                 [],
+                [],
                 'kuberoute_domain',
                 'kuberoute_name',
                 'kuberoute_failover',
@@ -279,6 +308,7 @@ class ServiceTests(unittest.TestCase):
             get_name_record_updates(
                 [self.service],
                 [self.pod, self.pod2],
+                self.nodes,
                 'kuberoute_domain',
                 'kuberoute_name',
                 'kuberoute_failover',
@@ -299,6 +329,7 @@ class ServiceTests(unittest.TestCase):
             get_name_record_updates(
                 [TESTSERVICE_REPLACE],
                 [self.pod, self.pod2],
+                self.nodes,
                 'kuberoute_domain',
                 'kuberoute_name',
                 'kuberoute_failover',

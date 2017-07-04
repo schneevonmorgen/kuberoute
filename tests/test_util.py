@@ -18,7 +18,7 @@ class UtilTests(unittest.TestCase):
             { 'a': 1 },
             { 'a': 1, 'b': 2 }
         ))
-        
+
     def test_dictionary_is_subset_superset(self):
         self.assertFalse(kuberoute.util.dictionary_is_subset(
             { 'a': 1, 'b': 2 },
@@ -45,7 +45,16 @@ class UtilTests(unittest.TestCase):
             'testcondition',
         )
         self.assertTrue('message' in cond)
-        
-                
-            
-        
+
+    def test_find_in_iter_not_in_list(self):
+        self.assertTrue(kuberoute.util.find_in_iter(lambda x: x == 0, [1,2,3])
+                        is None)
+
+    def test_find_in_iter_null(self):
+        self.assertTrue(kuberoute.util.find_in_iter(lambda x: True, []) is None)
+
+    def test_find_in_iter_positive(self):
+        self.assertTrue(kuberoute.util.find_in_iter(
+            lambda x: x == 2,
+            [1,2,3]
+        ) == 2)

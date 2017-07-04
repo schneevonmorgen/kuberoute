@@ -35,3 +35,10 @@ def render_template_string(msg, **replacements):
     return msg.replace("_TEMPLATE_START_", "{").replace("_TEMPLATE_END_", "}").format(
         **replacements
     )
+
+
+def find_in_iter(pred, objects):
+    for obj in objects:
+        if pred(obj):
+            return obj
+    return None

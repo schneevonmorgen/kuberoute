@@ -2,8 +2,9 @@
 services"""
 
 from kuberoute.dns import Record
+from kuberoute.node import node_unschedulable
 from kuberoute.util import (check_condition, dictionary_is_subset,
-                            render_template_string, safeget)
+                            find_in_iter, render_template_string, safeget)
 
 
 def has_label(labelname, service):
@@ -64,9 +65,25 @@ def is_pod_ready(pod):
     return condition['status'] == 'True'
 
 
+def host_ip_from_node(node):
+    addresses = node['status']['addresses']
+    address = find_in_iter(lambda addr: addr['type'] == 'InternalIP', addresses)
+    if address is not None:
+        return address['address']
+    else:
+        return None
+
+
+def is_pod_on_alive_node(pod, nodes):
+    host_ip = get_host_ip(pod)
+    node = find_in_iter(lambda node: host_ip_from_node(node) == host_ip, nodes)
+    return not node_unschedulable(node)
+
+
 def get_name_record_updates(
         services,
         pods,
+        nodes,
         domain_label,
         name_label,
         failover_label,
@@ -117,8 +134,16 @@ def get_name_record_updates(
         )
         if domain is None or name is None:
             continue
+
+        def pod_considered_alive(pod):
+            return (
+                is_pod_running(pod) and
+                is_pod_ready(pod) and
+                is_pod_on_alive_node(pod, nodes)
+            )
+
         filtered_pods = filter(
-            lambda obj: is_pod_running(obj) and is_pod_ready(obj),
+            pod_considered_alive,
             get_pods_for_service(service, pods)
         )
         ip_addresses = list(map(get_host_ip, filtered_pods))

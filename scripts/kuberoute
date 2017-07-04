@@ -166,6 +166,7 @@ def handler(
         records_by_domain = get_name_record_updates(
             services,
             pods,
+            nodes,
             domain_label,
             name_label,
             failover_label,
