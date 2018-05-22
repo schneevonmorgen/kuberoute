@@ -2,7 +2,7 @@
 kuberoute /kjuːb ɹuːt/
 ======================
 
-Kuberoute is a program that lets you conntect kubernetes services with
+Kuberoute is a program that lets you connect kubernetes services with
 domain names.
 
 .. image:: https://travis-ci.org/schneevonmorgen/kuberoute.svg?branch=master
